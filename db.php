@@ -41,25 +41,6 @@ function get_db(): PDO
     ");
     $db->exec("INSERT OR IGNORE INTO snapshots (id, css) VALUES (1, '')");
 
-    $db->exec("
-        CREATE TABLE IF NOT EXISTS rate_limits (
-            ip_address   TEXT    PRIMARY KEY,
-            last_poll_at INTEGER NOT NULL DEFAULT 0
-        )
-    ");
-
-    // 相容舊 DATETIME 欄位：若欄位型別為 DATETIME 則重建資料表
-    $col = $db->query("SELECT type FROM pragma_table_info('rate_limits') WHERE name='last_poll_at'")->fetch();
-    if ($col && strtoupper($col['type']) !== 'INTEGER') {
-        $db->exec("DROP TABLE rate_limits");
-        $db->exec("
-            CREATE TABLE rate_limits (
-                ip_address   TEXT    PRIMARY KEY,
-                last_poll_at INTEGER NOT NULL DEFAULT 0
-            )
-        ");
-    }
-
     // 相容已建立的舊資料庫
     try {
         $db->exec("ALTER TABLE modifications ADD COLUMN ip_address TEXT");
@@ -118,34 +99,6 @@ function check_rate_limit(string $ip_address, int $cooldown_seconds = 60): bool
     if (!empty($row['last_at']) && (time() - strtotime($row['last_at'])) < $cooldown_seconds) {
         return false;
     }
-
-    return true;
-}
-
-/**
- * 檢查 GET 輪詢的 rate limit（每 $seconds 秒最多一次）
- * 通過後自動更新時間戳
- */
-function check_poll_rate_limit(string $ip_address, int $seconds = 10): bool
-{
-    if (empty($ip_address)) return true;
-
-    $db = get_db();
-    $stmt = $db->prepare("SELECT last_poll_at FROM rate_limits WHERE ip_address = :ip");
-    $stmt->execute([':ip' => $ip_address]);
-    $row = $stmt->fetch();
-
-    if ($row && (time() - (int) $row['last_poll_at']) < $seconds) {
-        return false;
-    }
-
-    $now = time();
-    $stmt = $db->prepare("
-        INSERT INTO rate_limits (ip_address, last_poll_at)
-        VALUES (:ip, :now)
-        ON CONFLICT(ip_address) DO UPDATE SET last_poll_at = :now
-    ");
-    $stmt->execute([':ip' => $ip_address, ':now' => $now]);
 
     return true;
 }
