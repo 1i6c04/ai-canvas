@@ -106,6 +106,13 @@ function handle_submit(): void
 // ===================================================
 function handle_poll(): void
 {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!check_poll_rate_limit($ip, RATE_LIMIT_GET_COOLDOWN)) {
+        http_response_code(429);
+        echo json_encode(['error' => 'Too many requests', 'retry_after' => RATE_LIMIT_GET_COOLDOWN]);
+        return;
+    }
+
     $since_id = (int) ($_GET['since_id'] ?? 0);
     $modifications = get_modifications_since($since_id);
 
@@ -161,7 +168,6 @@ function call_gemini(string $user_prompt): ?string
 
     $data = json_decode($response, true);
 
-    // 從 Gemini response 中取出文字
     return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
 }
 
