@@ -121,6 +121,35 @@ function handle_poll(): void
 }
 
 // ===================================================
+// 同源瀏覽器請求驗證
+// ===================================================
+function is_same_origin_browser(): bool
+{
+    // 必須帶有瀏覽器特徵的 User-Agent
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    if (!preg_match('/Mozilla|Chrome|Safari|Firefox|Edge/i', $ua)) {
+        return false;
+    }
+
+    // 推算自身 origin
+    $scheme     = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $own_origin = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+
+    // Referer 或 Origin 其中一個必須符合自身來源
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    $origin  = $_SERVER['HTTP_ORIGIN']  ?? '';
+
+    if (!empty($referer) && str_starts_with($referer, $own_origin)) {
+        return true;
+    }
+    if (!empty($origin) && $origin === $own_origin) {
+        return true;
+    }
+
+    return false;
+}
+
+// ===================================================
 // Gemini API 呼叫
 // ===================================================
 function call_gemini(string $user_prompt): ?string
