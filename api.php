@@ -8,6 +8,26 @@
 
 require_once __DIR__ . '/db.php';
 
+// ---------- CORS ----------
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowed_origins = CORS_ALLOWED_ORIGINS;
+
+if (in_array('*', $allowed_origins, true)) {
+    header('Access-Control-Allow-Origin: *');
+} elseif (in_array($origin, $allowed_origins, true)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Vary: Origin');
+}
+
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Max-Age: 86400');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 // ---------- 路由 ----------
