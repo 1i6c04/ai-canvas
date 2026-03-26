@@ -85,26 +85,12 @@ function insert_modification(string $prompt, string $code, string $ip_address = 
 }
 
 /**
- * 將新 CSS 追加到 snapshot
+ * 取得所有修改的 CSS（頁面初始渲染用，每筆獨立 <style> 避免語法錯誤擴散）
  */
-function append_snapshot_css(string $css): void
+function get_all_modification_codes(): array
 {
     $db = get_db();
-    $stmt = $db->prepare("UPDATE snapshots SET css = css || :separator || :css WHERE id = 1");
-    $stmt->execute([
-        ':separator' => "\n",
-        ':css'       => $css,
-    ]);
-}
-
-/**
- * 讀取當前合併的 CSS 快照
- */
-function get_snapshot_css(): string
-{
-    $db = get_db();
-    $row = $db->query("SELECT css FROM snapshots WHERE id = 1")->fetch();
-    return $row['css'] ?? '';
+    return $db->query("SELECT id, code FROM modifications ORDER BY id ASC")->fetchAll();
 }
 
 /**

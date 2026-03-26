@@ -91,7 +91,6 @@ function handle_submit(): void
     }
 
     $id = insert_modification($prompt, $code, $ip);
-    append_snapshot_css($code);
 
     echo json_encode([
         'success'   => true,
@@ -106,10 +105,9 @@ function handle_submit(): void
 // ===================================================
 function handle_poll(): void
 {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-    if (!check_poll_rate_limit($ip, RATE_LIMIT_GET_COOLDOWN)) {
-        http_response_code(429);
-        echo json_encode(['error' => 'Too many requests', 'retry_after' => RATE_LIMIT_GET_COOLDOWN]);
+    if (!is_same_origin_browser()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Forbidden']);
         return;
     }
 
@@ -181,7 +179,16 @@ function clean_ai_response(string $raw): string
     $code = preg_replace('/^```(?:css|CSS)?\s*\n?/m', '', $code);
     $code = preg_replace('/\n?```\s*$/m', '', $code);
 
-    return trim($code);
+    $code = trim($code);
+
+    // AI 輸出有時因 maxOutputTokens 被截斷導致 `{` 和 `}` 不平衡
+    $open  = substr_count($code, '{');
+    $close = substr_count($code, '}');
+    if ($open > $close) {
+        $code .= str_repeat("\n}", $open - $close);
+    }
+
+    return $code;
 }
 
 // ===================================================

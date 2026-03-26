@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/db.php';
 
-$snapshot_css = get_snapshot_css();
-$last_mod_id = get_latest_mod_id();
+$all_mods = get_all_modification_codes();
+$last_mod_id = empty($all_mods) ? 0 : end($all_mods)['id'];
 $recent_logs = get_recent_modifications(10);
 ?>
 <!DOCTYPE html>
@@ -14,9 +14,9 @@ $recent_logs = get_recent_modifications(10);
     <meta name="description" content="一個由全世界的人共同改造的網頁。輸入你的指令，AI 會即時修改這個頁面的外觀。">
     <link rel="stylesheet" href="style.css">
 
-    <?php if ($snapshot_css !== ''): ?>
-    <style id="canvas-css"><?= $snapshot_css ?></style>
-    <?php endif; ?>
+    <?php foreach ($all_mods as $mod): ?>
+    <style data-mod-id="<?= $mod['id'] ?>"><?= $mod['code'] ?></style>
+    <?php endforeach; ?>
 
     <!-- 守衛樣式：永遠排最後，防止 AI 在 body/html 套 transform/animation
          body 有 transform 時會破壞 position:fixed 的 viewport 定位基準 -->
@@ -191,7 +191,7 @@ $recent_logs = get_recent_modifications(10);
         const statusEl    = shadow.getElementById('status');
         const logEntries  = document.getElementById('log-entries');
 
-        let lastModId = 1; // 從第一筆開始讀取css
+        let lastModId = <?= (int) $last_mod_id ?>; // server 渲染時的最新 ID，snapshot 已包含之前所有 CSS
         loadData();
 
         // ---------- 送出 Prompt ----------
@@ -247,7 +247,7 @@ $recent_logs = get_recent_modifications(10);
         async function loadData() {
             try {
                 const res = await fetch('/api.php?since_id=' + lastModId);
-                if (res.status === 429) return; // rate limited，靜默跳過
+                if (!res.ok) return;
                 const data = await res.json();
 
                 if (data.success && data.modifications.length > 0) {
