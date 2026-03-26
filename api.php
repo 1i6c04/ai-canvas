@@ -46,22 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ===================================================
 function handle_submit(): void
 {
-    // 0. 檢查發送頻率限制（每分鐘 1 次）
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-    if (!check_rate_limit($ip, 60)) {
+    if (!check_rate_limit($ip, RATE_LIMIT_POST_COOLDOWN)) {
         http_response_code(429);
-        echo json_encode(['error' => '請給 AI 一點喘息時間，每分鐘只能送出一條指令！']);
+        echo json_encode(['error' => '請給 AI 一點喘息時間，每 ' . RATE_LIMIT_POST_COOLDOWN . ' 秒只能送出一條指令！']);
         return;
     }
 
-    // 1. 驗證 API Key 有沒有設定
     if (empty(GEMINI_API_KEY)) {
         http_response_code(500);
-        echo json_encode(['error' => '請先在 config.php 中設定你的 Gemini API Key']);
+        echo json_encode(['error' => '請先在 .env 中設定你的 Gemini API Key']);
         return;
     }
 
-    // 2. 讀取 input
     $input = json_decode(file_get_contents('php://input'), true);
     $prompt = trim($input['prompt'] ?? '');
 
@@ -77,7 +74,6 @@ function handle_submit(): void
         return;
     }
 
-    // 3. 呼叫 Gemini API
     $ai_response = call_gemini($prompt);
 
     if ($ai_response === null) {
@@ -86,27 +82,21 @@ function handle_submit(): void
         return;
     }
 
-    // 4. 解析並清理回應
     $code = clean_ai_response($ai_response);
 
-    // 5. 判斷是 CSS 還是 HTML
-    $code_type = detect_code_type($code);
-
-    // 6. 安全性過濾
     if (!is_safe($code)) {
         http_response_code(400);
-        echo json_encode(['error' => '偵測到不安全的內容，已被拒絕']);
+        echo json_encode(['error' => '此命令可能破壞網頁，已被拒絕']);
         return;
     }
 
-    // 7. 儲存到資料庫
-    $id = insert_modification($prompt, $code_type, $code, $ip);
+    $id = insert_modification($prompt, $code, $ip);
+    append_snapshot_css($code);
 
-    // 8. 回應
     echo json_encode([
         'success'   => true,
         'id'        => $id,
-        'code_type' => $code_type,
+        'code_type' => 'css',
         'code'      => $code,
     ]);
 }
@@ -182,71 +172,25 @@ function clean_ai_response(string $raw): string
 {
     $code = $raw;
 
-    // 移除 ```css ... ``` 或 ```html ... ``` 的包裝
-    $code = preg_replace('/^```(?:css|html|CSS|HTML)?\s*\n?/m', '', $code);
+    $code = preg_replace('/^```(?:css|CSS)?\s*\n?/m', '', $code);
     $code = preg_replace('/\n?```\s*$/m', '', $code);
 
     return trim($code);
 }
 
 // ===================================================
-// 判斷程式碼是 CSS 還是 HTML
-// ===================================================
-function detect_code_type(string $code): string
-{
-    // 如果有我們在 System Prompt 中要求的標記
-    if (str_starts_with($code, '/* CSS */')) {
-        return 'css';
-    }
-    if (str_starts_with($code, '<!-- HTML -->')) {
-        return 'html';
-    }
-
-    // 啟發式判斷：HTML 通常以 < 開頭，CSS 通常以選擇器開頭
-    // 如果包含 HTML 標籤特徵
-    if (preg_match('/<[a-z][\s\S]*>/i', $code)) {
-        // 但如果也包含 CSS 選擇器特徵（{ ... }），則判斷為 CSS
-        if (preg_match('/[a-z#.]\s*\{[^}]+\}/i', $code)) {
-            return 'css';
-        }
-        return 'html';
-    }
-
-    // 包含 CSS 選擇器特徵
-    if (preg_match('/[a-z#.]\s*\{/i', $code)) {
-        return 'css';
-    }
-
-    // 預設回傳 CSS（比 HTML 更安全）
-    return 'css';
-}
-
-// ===================================================
-// 安全性過濾（禁止 JavaScript 注入）
+// 安全性過濾
 // ===================================================
 function is_safe(string $code): bool
 {
     $forbidden = [
         '<script',
         '</script',
+        '<html',
+        '<body',
+        '<head',
+        '<iframe',
         'javascript:',
-        'onclick=',
-        'ondblclick=',
-        'onmousedown=',
-        'onmouseup=',
-        'onmouseover=',
-        'onmouseout=',
-        'onkeydown=',
-        'onkeyup=',
-        'onkeypress=',
-        'onload=',
-        'onerror=',
-        'onsubmit=',
-        'onfocus=',
-        'onblur=',
-        'onchange=',
-        'onresize=',
-        'eval(',
         'expression(',
         'url(javascript',
         'display: none',
@@ -259,6 +203,14 @@ function is_safe(string $code): bool
         '#submit-btn',
         'position: fixed',
         'position:fixed',
+        'body:active',
+        'body:hover',
+        'body:focus',
+        'html:active',
+        'html:hover',
+        'html:focus',
+        ':root:active',
+        ':root:hover',
     ];
 
     $code_lower = strtolower($code);
@@ -267,6 +219,11 @@ function is_safe(string $code): bool
         if (str_contains($code_lower, $keyword)) {
             return false;
         }
+    }
+
+    // 含有 HTML 標籤就拒絕（CSS-only）
+    if (preg_match('/<[a-z]/i', $code)) {
+        return false;
     }
 
     return true;
