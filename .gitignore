@@ -1,8 +1,10 @@
 # Environment variables (contains secrets)
 .env
+.csrf_secret
 
 # SQLite database
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+.idea

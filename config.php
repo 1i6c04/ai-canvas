@@ -8,7 +8,7 @@
 $envFile = __DIR__ . '/.env';
 if (file_exists($envFile)) {
     foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        if (str_starts_with(trim($line), '#')) continue;
+        if (strpos(trim($line), '#') === 0) continue;
         [$key, $value] = explode('=', $line, 2);
         $_ENV[trim($key)] = trim($value);
     }
@@ -24,6 +24,13 @@ define('CORS_ALLOWED_ORIGINS', ['*']);
 
 // SQLite 資料庫路徑（自動建立，不需手動設定）
 define('DB_PATH', __DIR__ . '/canvas.sqlite');
+
+// CSRF Token 密鑰（首次執行自動產生，之後固定）
+$csrf_secret_file = __DIR__ . '/.csrf_secret';
+if (!file_exists($csrf_secret_file)) {
+    file_put_contents($csrf_secret_file, bin2hex(random_bytes(32)));
+}
+define('CSRF_SECRET', trim(file_get_contents($csrf_secret_file)));
 
 // Gemini API 端點
 define('GEMINI_MODEL', 'gemini-2.5-flash-lite');
@@ -47,7 +54,10 @@ Rules:
 - DO NOT target #control-panel, #prompt-input, #submit-btn, or .mutation-log.
 - DO NOT use 'display: none', 'opacity: 0', or 'visibility: hidden' on body or main sections.
 - DO NOT use 'position: fixed' on body.
-- Keep the code short (under 20 lines).
+- Scale the number of CSS rules to match the complexity and detail of the request:
+  - Vague or very short input (1–3 words, e.g. "test", "blue"): output 1–3 rules only.
+  - Moderate input (a short phrase with intent): output 4–10 rules.
+  - Detailed or multi-part input: output up to 20 rules.
 - Use creative and bold styling choices.
 Output only the CSS code, nothing else.
 PROMPT);

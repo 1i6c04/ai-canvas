@@ -4,6 +4,7 @@ require_once __DIR__ . '/db.php';
 $all_mods = get_all_modification_codes();
 $last_mod_id = empty($all_mods) ? 0 : end($all_mods)['id'];
 $recent_logs = get_recent_modifications(10);
+$csrf_token = generate_csrf_token();
 ?>
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -191,7 +192,8 @@ $recent_logs = get_recent_modifications(10);
         const statusEl    = shadow.getElementById('status');
         const logEntries  = document.getElementById('log-entries');
 
-        let lastModId = <?= (int) $last_mod_id ?>; // server 渲染時的最新 ID，snapshot 已包含之前所有 CSS
+        const csrfToken = '<?= $csrf_token ?>';
+        let lastModId = <?= (int) $last_mod_id ?>;
         loadData();
 
         // ---------- 送出 Prompt ----------
@@ -210,7 +212,10 @@ $recent_logs = get_recent_modifications(10);
             try {
                 const res = await fetch('/api.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken,
+                    },
                     body: JSON.stringify({ prompt: prompt }),
                 });
 

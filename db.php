@@ -86,21 +86,25 @@ function get_latest_mod_id(): int
 
 /**
  * 檢查 POST 提交的 rate limit（冷卻秒數）
+ * 時間比較全部在 SQLite 內完成（皆為 UTC），避免 PHP 本地時區造成偏差
  */
 function check_rate_limit(string $ip_address, int $cooldown_seconds = 60): bool
 {
     if (empty($ip_address)) return true;
 
     $db = get_db();
-    $stmt = $db->prepare("SELECT MAX(created_at) AS last_at FROM modifications WHERE ip_address = :ip");
-    $stmt->execute([':ip' => $ip_address]);
+    $stmt = $db->prepare("
+        SELECT COUNT(*) AS cnt FROM modifications
+        WHERE ip_address = :ip
+          AND created_at > datetime('now', :offset)
+    ");
+    $stmt->execute([
+        ':ip'     => $ip_address,
+        ':offset' => '-' . (int) $cooldown_seconds . ' seconds',
+    ]);
     $row = $stmt->fetch();
 
-    if (!empty($row['last_at']) && (time() - strtotime($row['last_at'])) < $cooldown_seconds) {
-        return false;
-    }
-
-    return true;
+    return ($row['cnt'] ?? 0) === 0;
 }
 
 /**
@@ -124,4 +128,29 @@ function get_recent_modifications(int $limit = 10): array
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
     return array_reverse($stmt->fetchAll());
+}
+
+// ===================================================
+// CSRF Token（HMAC 簽章，無需 Session）
+// ===================================================
+
+function generate_csrf_token(): string
+{
+    $ts = time();
+    $sig = hash_hmac('sha256', (string) $ts, CSRF_SECRET);
+    return $ts . '.' . $sig;
+}
+
+function validate_csrf_token(string $token, int $max_age = 7200): bool
+{
+    $parts = explode('.', $token, 2);
+    if (count($parts) !== 2) return false;
+
+    [$ts, $sig] = $parts;
+    $ts = (int) $ts;
+
+    if (abs(time() - $ts) > $max_age) return false;
+
+    $expected = hash_hmac('sha256', (string) $ts, CSRF_SECRET);
+    return hash_equals($expected, $sig);
 }

@@ -20,7 +20,7 @@ if (in_array('*', $allowed_origins, true)) {
 }
 
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 header('Access-Control-Max-Age: 86400');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -46,6 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ===================================================
 function handle_submit(): void
 {
+    if (!is_same_origin_browser()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Forbidden']);
+        return;
+    }
+
+    $csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!validate_csrf_token($csrf)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Invalid or expired token, please reload the page.']);
+        return;
+    }
+
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
     if (!check_rate_limit($ip, RATE_LIMIT_POST_COOLDOWN)) {
         http_response_code(429);
@@ -139,7 +152,7 @@ function is_same_origin_browser(): bool
     $referer = $_SERVER['HTTP_REFERER'] ?? '';
     $origin  = $_SERVER['HTTP_ORIGIN']  ?? '';
 
-    if (!empty($referer) && str_starts_with($referer, $own_origin)) {
+    if (!empty($referer) && strpos($referer, $own_origin) === 0) {
         return true;
     }
     if (!empty($origin) && $origin === $own_origin) {
