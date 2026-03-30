@@ -1,0 +1,44 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via rsync
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avz --delete
+            --exclude='.env'
+            --exclude='.csrf_secret'
+            --exclude='canvas.sqlite'
+            --exclude='canvas.sqlite-journal'
+            --exclude='canvas.sqlite-wal'
+            --exclude='canvas.sqlite-shm'
+            --exclude='.git'
+            --exclude='.idea'
+          path: ./
+          remote_path: ${{ secrets.EC2_DEPLOY_PATH }}
+          remote_host: ${{ secrets.EC2_HOST }}
+          remote_user: ${{ secrets.EC2_USER }}
+          remote_key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Run post-deploy script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: bash ${{ secrets.EC2_DEPLOY_PATH }}/cicd/deploy.sh
+
+      - name: Done
+        run: echo "Deployed successfully to ${{ secrets.EC2_HOST }}"
