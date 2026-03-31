@@ -17,7 +17,7 @@ if (file_exists($envFile)) {
 define('GEMINI_API_KEY', $_ENV['GEMINI_API_KEY'] ?? '');
 
 // Rate Limit 設定
-define('RATE_LIMIT_POST_COOLDOWN', 60);   // POST：兩次送出之間最少秒數
+define('RATE_LIMIT_POST_COOLDOWN', 5);    // POST：兩次送出之間最少秒數
 
 // CORS 允許來源（填 ['*'] 表示不限）
 define('CORS_ALLOWED_ORIGINS', ['*']);
