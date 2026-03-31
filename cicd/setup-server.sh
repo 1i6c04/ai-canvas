@@ -4,6 +4,9 @@
 # =============================================================================
 set -euo pipefail
 
+export NEEDRESTART_MODE=a
+export DEBIAN_FRONTEND=noninteractive
+
 DEPLOY_USER="${1:-ubuntu}"
 DEPLOY_PATH="${2:-/var/www/ai-canvas}"
 
