@@ -176,12 +176,30 @@ $csrf_token = generate_csrf_token();
                 #status.error   { color: #e94560; }
                 #status.loading { color: #ffc107; }
                 @media (max-width: 600px) {
-                    #control-panel { flex-wrap: wrap; }
-                    #prompt-input  { width: 100%; }
+                    #control-panel {
+                        flex-wrap: wrap;
+                        padding: 0.6rem 0.75rem;
+                        gap: 0.5rem;
+                    }
+                    #prompt-input {
+                        flex: 1;
+                        min-width: 0;
+                        font-size: 0.85rem;
+                        padding: 0.6rem 0.75rem;
+                    }
+                    #submit-btn {
+                        padding: 0.6rem 1rem;
+                        font-size: 0.85rem;
+                    }
+                    #status {
+                        width: 100%;
+                        text-align: left;
+                        min-width: unset;
+                    }
                 }
             </style>
             <div id="control-panel">
-                <input type="text" id="prompt-input" placeholder="輸入指令（限 120 字）...例如：把背景變星空" maxlength="120" autocomplete="off">
+                <input type="text" id="prompt-input" placeholder="輸入指令...例如：把背景變星空" maxlength="120" autocomplete="off">
                 <button id="submit-btn">🚀 送出</button>
                 <span id="status"></span>
             </div>
