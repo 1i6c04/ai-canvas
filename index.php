@@ -180,14 +180,19 @@ $csrf_token = generate_csrf_token();
                         padding: 0.6rem 0.75rem;
                         gap: 0.5rem;
                     }
+                    #input-row {
+                        flex-wrap: wrap;
+                        gap: 0.5rem;
+                    }
                     #prompt-input {
-                        flex: 1;
+                        flex: 1 1 100%;
                         min-width: 0;
                         font-size: 0.85rem;
                         padding: 0.6rem 0.75rem;
                     }
                     #submit-btn {
-                        padding: 0.6rem 1rem;
+                        width: 100%;
+                        padding: 0.65rem 1rem;
                         font-size: 0.85rem;
                     }
                     #status {
