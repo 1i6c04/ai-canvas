@@ -235,6 +235,7 @@ $csrf_token = generate_csrf_token();
                     border-radius: 6px;
                     transition: transform 0.3s ease;
                     line-height: 1;
+                    flex-shrink: 0;
                 }
                 #dice-btn:hover {
                     transform: rotate(180deg);
