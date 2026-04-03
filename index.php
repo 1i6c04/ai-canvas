@@ -177,7 +177,6 @@ $csrf_token = generate_csrf_token();
                 #status.loading { color: #ffc107; }
                 @media (max-width: 600px) {
                     #control-panel {
-                        flex-wrap: wrap;
                         padding: 0.6rem 0.75rem;
                         gap: 0.5rem;
                     }
