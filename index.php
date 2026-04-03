@@ -403,8 +403,12 @@ $csrf_token = generate_csrf_token();
         // ---------- Chip 推薦 ----------
         function renderChips(exclude) {
             const available = CHIP_POOL.filter(function (p) { return exclude.indexOf(p) === -1; });
-            const shuffled = available.slice().sort(function () { return Math.random() - 0.5; });
-            currentChips = shuffled.slice(0, 4);
+            const arr = available.slice();
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+            }
+            currentChips = arr.slice(0, 4);
 
             const chipsEl = shadow.getElementById('chips');
             chipsEl.innerHTML = '';
