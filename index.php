@@ -268,9 +268,23 @@ $csrf_token = generate_csrf_token();
         const statusEl    = shadow.getElementById('status');
         const logEntries  = document.getElementById('log-entries');
 
+        // ---------- Chip 推薦提示 ----------
+        const CHIP_POOL = [
+            '星空背景', '彩虹標題文字', '霓虹燈卡片', '海浪動畫效果',
+            '把背景變成熔岩', '讓按鈕閃爍', '文字變成金色',
+            '卡片加上玻璃質感', '標題加上打字機效果',
+            '背景變成極光', '讓整個頁面旋轉360度',
+            '卡片變成浮空效果', '文字加上彩色陰影', '背景變成像素風格'
+        ];
+        let currentChips = [];
+
         const csrfToken = '<?= $csrf_token ?>';
         let lastModId = <?= (int) $last_mod_id ?>;
         loadData();
+        renderChips([]);
+
+        const diceBtn = shadow.getElementById('dice-btn');
+        diceBtn.addEventListener('click', handleDice);
 
         // ---------- 送出 Prompt ----------
         submitBtn.addEventListener('click', submitPrompt);
@@ -384,6 +398,36 @@ $csrf_token = generate_csrf_token();
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // ---------- Chip 推薦 ----------
+        function renderChips(exclude) {
+            const available = CHIP_POOL.filter(function (p) { return exclude.indexOf(p) === -1; });
+            const shuffled = available.slice().sort(function () { return Math.random() - 0.5; });
+            currentChips = shuffled.slice(0, 4);
+
+            const chipsEl = shadow.getElementById('chips');
+            chipsEl.innerHTML = '';
+            currentChips.forEach(function (text) {
+                const chip = document.createElement('button');
+                chip.className = 'chip';
+                chip.textContent = text;
+                chip.addEventListener('click', function () {
+                    promptInput.value = text;
+                    promptInput.focus();
+                });
+                chipsEl.appendChild(chip);
+            });
+        }
+
+        function handleDice() {
+            renderChips(currentChips);
+            diceBtn.style.transition = 'transform 0.4s ease';
+            diceBtn.style.transform = 'rotate(360deg)';
+            setTimeout(function () {
+                diceBtn.style.transition = 'none';
+                diceBtn.style.transform = 'rotate(0deg)';
+            }, 420);
         }
     })();
     </script>
