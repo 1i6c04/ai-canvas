@@ -118,10 +118,10 @@ $csrf_token = generate_csrf_token();
                 #control-panel {
                     background: #1a1a2e;
                     border-top: 1px solid #25253e;
-                    padding: 1rem 1.5rem;
+                    padding: 0.75rem 1.5rem;
                     display: flex;
-                    gap: 0.75rem;
-                    align-items: center;
+                    flex-direction: column;
+                    gap: 0.5rem;
                     backdrop-filter: blur(20px);
                     box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
                     font-family: 'Inter', sans-serif;
@@ -197,11 +197,70 @@ $csrf_token = generate_csrf_token();
                         min-width: unset;
                     }
                 }
+                #chip-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                    flex-wrap: wrap;
+                    width: 100%;
+                }
+                #chips {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.4rem;
+                    flex: 1;
+                }
+                .chip {
+                    padding: 0.3rem 0.75rem;
+                    background: #25253e;
+                    border: 1px solid #3a3a5c;
+                    border-radius: 999px;
+                    color: #ccc;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    transition: background 0.15s, border-color 0.15s, color 0.15s;
+                    white-space: nowrap;
+                }
+                .chip:hover {
+                    background: #e94560;
+                    border-color: #e94560;
+                    color: #fff;
+                }
+                #dice-btn {
+                    background: none;
+                    border: none;
+                    font-size: 1.2rem;
+                    cursor: pointer;
+                    padding: 0.2rem 0.4rem;
+                    border-radius: 6px;
+                    transition: transform 0.3s ease;
+                    line-height: 1;
+                }
+                #dice-btn:hover {
+                    transform: rotate(180deg);
+                }
+                #input-row {
+                    display: flex;
+                    gap: 0.75rem;
+                    align-items: center;
+                    width: 100%;
+                }
+                @media (max-width: 600px) {
+                    .chip { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+                    #dice-btn { font-size: 1rem; }
+                }
             </style>
             <div id="control-panel">
-                <input type="text" id="prompt-input" placeholder="輸入指令...例如：把背景變星空" maxlength="120" autocomplete="off">
-                <button id="submit-btn">🚀 送出</button>
-                <span id="status"></span>
+                <div id="chip-row">
+                    <div id="chips"></div>
+                    <button id="dice-btn" title="換一批提示">🎲</button>
+                </div>
+                <div id="input-row">
+                    <input type="text" id="prompt-input" placeholder="輸入指令...例如：把背景變星空" maxlength="120" autocomplete="off">
+                    <button id="submit-btn">🚀 送出</button>
+                    <span id="status"></span>
+                </div>
             </div>
         `;
 
