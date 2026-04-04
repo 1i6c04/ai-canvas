@@ -34,7 +34,7 @@ $csrf_token = generate_csrf_token();
     <!-- ===== Header ===== -->
     <header class="site-header">
         <h1>🎨 AI Canvas</h1>
-        <p>每個人都可以改造這個網頁的外觀。輸入你的指令，看看會發生什麼事。</p>
+        <p>用文字指揮 AI 改造這個網頁的視覺外觀——顏色、字體、動畫都行。所有人的改動會永久累積。<br>或許你也可以在這裡放廣告？</p>
     </header>
 
     <!-- ===== Canvas Area ===== -->
@@ -294,9 +294,6 @@ $csrf_token = generate_csrf_token();
 
         // ---------- 送出 Prompt ----------
         submitBtn.addEventListener('click', submitPrompt);
-        promptInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') submitPrompt();
-        });
 
         async function submitPrompt() {
             const prompt = promptInput.value.trim();
@@ -439,6 +436,12 @@ $csrf_token = generate_csrf_token();
                 diceBtn.style.transform = 'rotate(0deg)';
             }, 420);
         }
+
+        // ---------- 動態同步 footer spacer 高度 ----------
+        const footerSpacer = document.querySelector('.footer-spacer');
+        new ResizeObserver(function () {
+            footerSpacer.style.height = host.offsetHeight + 'px';
+        }).observe(host);
     })();
     </script>
 

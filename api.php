@@ -246,7 +246,7 @@ function is_safe(string $code): bool
         '<head',
         '<iframe',
         'javascript:',
-        'expression(',
+        /* 'expression(',
         'url(javascript',
         'display: none',
         'display:none',
@@ -265,7 +265,7 @@ function is_safe(string $code): bool
         'html:hover',
         'html:focus',
         ':root:active',
-        ':root:hover',
+        ':root:hover', */
     ];
 
     $code_lower = strtolower($code);

@@ -285,4 +285,8 @@ body {
     .card-grid {
         grid-template-columns: 1fr;
     }
+
+    .footer-spacer {
+        height: 200px;
+    }
 }
